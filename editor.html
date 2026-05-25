@@ -265,13 +265,14 @@
     border-radius: 4px;
     padding: 15px;
     font-family: 'Courier New', monospace;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--text-accent);
     max-height: 500px;
     overflow-y: auto;
     margin: 15px 0;
-    line-height: 1.3;
+    line-height: 1.2;
     word-break: break-all;
+    white-space: pre-wrap;
   }
 
   .copy-btn {
@@ -546,6 +547,16 @@
   }
 
   function generateUpdatedHTML() {
+    // Build broadcast data object as properly escaped JSON string
+    let broadcastDataStr = '{\n';
+    matchesData.forEach((m, i) => {
+      const escaped = m.broadcast.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+      broadcastDataStr += `      "${m.team1}|${m.team2}": "${escaped}"`;
+      if (i < matchesData.length - 1) broadcastDataStr += ',';
+      broadcastDataStr += '\n';
+    });
+    broadcastDataStr += '    }';
+
     const baseIndex = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -946,9 +957,7 @@
 
 <script>
   // Broadcast Data - Edit these values to update match broadcasts
-  const broadcastData = {
-${matchesData.map(m => `    "${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\n')}
-  };
+  const broadcastData = ${broadcastDataStr};
 
   // Function to get broadcast info for a match
   function getBroadcast(team1, team2) {
@@ -1027,11 +1036,11 @@ ${matchesData.map(m => `    "${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\
       return "https://flagofiran.com/files/Flag_of_Iran_detailed.svg";
     }
     const code = flagCodes[teamName] || "un";
-    return \`https://cdn.jsdelivr.net/npm/@lipis/flag-icons@6.14.0/flags/4x3/\${code}.svg\`;
+    return "https://cdn.jsdelivr.net/npm/@lipis/flag-icons@6.14.0/flags/4x3/" + code + ".svg";
   }
 
   const container = document.getElementById('worldcup-container');
-  const chevronSvg = \`<svg class="chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>\`;
+  const chevronSvg = '<svg class="chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
 
   for (const [groupName, teams] of Object.entries(groups)) {
     const groupDiv = document.createElement('div');
@@ -1039,7 +1048,7 @@ ${matchesData.map(m => `    "${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\
 
     const header = document.createElement('div');
     header.className = 'group-header';
-    header.innerHTML = \`<span class="group-title">Group \${groupName} <span style="font-family:'MrBanks-Text', sans-serif; color:var(--text-muted); font-size:1rem; margin-left:8px; font-weight:normal">(\${teams.join(', ')})</span></span>\` + chevronSvg;
+    header.innerHTML = '<span class="group-title">Group ' + groupName + ' <span style="font-family:' + "'MrBanks-Text', sans-serif" + '; color:var(--text-muted); font-size:1rem; margin-left:8px; font-weight:normal">(' + teams.join(', ') + ')</span></span>' + chevronSvg;
     
     const mdWrapper = document.createElement('div');
     mdWrapper.className = 'anim-wrapper';
@@ -1047,7 +1056,7 @@ ${matchesData.map(m => `    "${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\
     const mdContent = document.createElement('div');
     mdContent.className = 'anim-content matchdays-list';
 
-    header.onclick = () => {
+    header.onclick = function() {
       header.classList.toggle('open-header');
       mdWrapper.classList.toggle('open');
     };
@@ -1058,10 +1067,10 @@ ${matchesData.map(m => `    "${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\
       { day: 3, matches: [[0, 3], [1, 2]] }
     ];
 
-    schedule.forEach(md => {
+    schedule.forEach(function(md) {
       const mdHeader = document.createElement('div');
       mdHeader.className = 'matchday-header';
-      mdHeader.innerHTML = \`<span>Matchday \${md.day}</span> \${chevronSvg}\`;
+      mdHeader.innerHTML = '<span>Matchday ' + md.day + '</span> ' + chevronSvg;
 
       const matchWrapper = document.createElement('div');
       matchWrapper.className = 'anim-wrapper';
@@ -1069,12 +1078,12 @@ ${matchesData.map(m => `    "${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\
       const matchContent = document.createElement('div');
       matchContent.className = 'anim-content matches-list';
 
-      mdHeader.onclick = () => {
+      mdHeader.onclick = function() {
         mdHeader.classList.toggle('active');
         matchWrapper.classList.toggle('open');
       };
 
-      md.matches.forEach(idx => {
+      md.matches.forEach(function(idx) {
         const team1 = teams[idx[0]];
         const team2 = teams[idx[1]];
         const url1 = getFlagUrl(team1);
@@ -1082,31 +1091,29 @@ ${matchesData.map(m => `    "${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\
 
         const matchDiv = document.createElement('div');
         matchDiv.className = 'match';
-        matchDiv.innerHTML = \`
-          <div class="match-row">
-            <div class="team-slot">
-              <div class="team-flag" style="background-image: url('\${url1}');"></div>
-              <span class="team-name">\${team1}</span>
-            </div>
-            <div class="vs-label">VS</div>
-            <div class="team-slot">
-              <div class="team-flag" style="background-image: url('\${url2}');"></div>
-              <span class="team-name">\${team2}</span>
-            </div>
-          </div>
-        \`;
+        matchDiv.innerHTML = '<div class="match-row">' +
+          '<div class="team-slot">' +
+          '<div class="team-flag" style="background-image: url(' + "'" + url1 + "'" + ');"></div>' +
+          '<span class="team-name">' + team1 + '</span>' +
+          '</div>' +
+          '<div class="vs-label">VS</div>' +
+          '<div class="team-slot">' +
+          '<div class="team-flag" style="background-image: url(' + "'" + url2 + "'" + ');"></div>' +
+          '<span class="team-name">' + team2 + '</span>' +
+          '</div>' +
+          '</div>';
 
         const bcWrapper = document.createElement('div');
         bcWrapper.className = 'anim-wrapper broadcasters';
         
         const bcContent = document.createElement('div');
         bcContent.className = 'anim-content broadcasters-inner';
-        bcContent.innerHTML = \`📺 UHDTV Live on: \${getBroadcast(team1, team2)}\`;
+        bcContent.innerHTML = '📺 UHDTV Live on: ' + getBroadcast(team1, team2);
 
         bcWrapper.appendChild(bcContent);
         matchDiv.appendChild(bcWrapper);
 
-        matchDiv.onclick = (e) => {
+        matchDiv.onclick = function(e) {
           e.stopPropagation();
           bcWrapper.classList.toggle('open');
         };
