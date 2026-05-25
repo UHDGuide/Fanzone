@@ -181,6 +181,8 @@
     color: var(--text-main);
     font-size: 0.95rem;
     font-family: 'Courier New', monospace;
+    min-height: 50px;
+    resize: vertical;
   }
 
   .broadcast-input:focus {
@@ -263,12 +265,13 @@
     border-radius: 4px;
     padding: 15px;
     font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: var(--text-accent);
     max-height: 500px;
     overflow-y: auto;
     margin: 15px 0;
-    line-height: 1.4;
+    line-height: 1.3;
+    word-break: break-all;
   }
 
   .copy-btn {
@@ -310,9 +313,40 @@
     padding: 40px;
     color: var(--text-muted);
   }
+
+  .success-message {
+    display: none;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--success);
+    color: var(--bg-main);
+    padding: 15px 20px;
+    border-radius: 6px;
+    z-index: 2000;
+    font-weight: bold;
+  }
+
+  .success-message.show {
+    display: block;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
 </style>
 </head>
 <body>
+
+<div class="success-message" id="success-msg"></div>
 
 <div class="container">
   <div class="header">
@@ -360,45 +394,30 @@
 
 <script>
   let matchesData = [];
-  let baseHTML = '';
 
-  // Fetch and parse the current index.html
-  async function loadHTML() {
-    try {
-      const response = await fetch('index.html');
-      baseHTML = await response.text();
-      parseMatches();
-      renderMatches();
-      updateStats();
-    } catch (error) {
-      console.error('Error loading HTML:', error);
-      // Fallback: Create demo data if fetch fails
-      createDemoData();
-    }
-  }
+  // Group and team configuration
+  const groups = {
+    A: ["Mexico", "South Africa", "South Korea", "Czechia"],
+    B: ["Canada", "Switzerland", "Qatar", "Bosnia and Herzegovina"],
+    C: ["Brazil", "Morocco", "Haiti", "Scotland"],
+    D: ["USA", "Paraguay", "Australia", "Türkiye"],
+    E: ["Germany", "Curaçao", "Côte d'Ivoire", "Ecuador"],
+    F: ["Netherlands", "Japan", "Tunisia", "Sweden"],
+    G: ["Belgium", "Egypt", "Iran", "New Zealand"],
+    H: ["Spain", "Cabo Verde", "Saudi Arabia", "Uruguay"],
+    I: ["France", "Senegal", "Norway", "Iraq"],
+    J: ["Argentina", "Algeria", "Austria", "Jordan"],
+    K: ["Portugal", "Uzbekistan", "Colombia", "Congo DR"],
+    L: ["England", "Croatia", "Ghana", "Panama"]
+  };
 
-  function createDemoData() {
-    const groups = {
-      A: ["Mexico", "South Africa", "South Korea", "Czechia"],
-      B: ["Canada", "Switzerland", "Qatar", "Bosnia and Herzegovina"],
-      C: ["Brazil", "Morocco", "Haiti", "Scotland"],
-      D: ["USA", "Paraguay", "Australia", "Türkiye"],
-      E: ["Germany", "Curaçao", "Côte d'Ivoire", "Ecuador"],
-      F: ["Netherlands", "Japan", "Tunisia", "Sweden"],
-      G: ["Belgium", "Egypt", "Iran", "New Zealand"],
-      H: ["Spain", "Cabo Verde", "Saudi Arabia", "Uruguay"],
-      I: ["France", "Senegal", "Norway", "Iraq"],
-      J: ["Argentina", "Algeria", "Austria", "Jordan"],
-      K: ["Portugal", "Uzbekistan", "Colombia", "Congo DR"],
-      L: ["England", "Croatia", "Ghana", "Panama"]
-    };
+  const schedule = [
+    { day: 1, matches: [[0, 1], [2, 3]] },
+    { day: 2, matches: [[0, 2], [3, 1]] },
+    { day: 3, matches: [[0, 3], [1, 2]] }
+  ];
 
-    const schedule = [
-      { day: 1, matches: [[0, 1], [2, 3]] },
-      { day: 2, matches: [[0, 2], [3, 1]] },
-      { day: 3, matches: [[0, 3], [1, 2]] }
-    ];
-
+  function initializeMatches() {
     matchesData = [];
     let matchId = 1;
 
@@ -413,56 +432,15 @@
             matchday: md.day,
             team1,
             team2,
-            broadcast: localStorage.getItem(`broadcast_${team1}_vs_${team2}`) || ''
+            broadcast: ''
           });
         });
       });
     }
 
     loadFromLocalStorage();
-  }
-
-  function parseMatches() {
-    const groups = {
-      A: ["Mexico", "South Africa", "South Korea", "Czechia"],
-      B: ["Canada", "Switzerland", "Qatar", "Bosnia and Herzegovina"],
-      C: ["Brazil", "Morocco", "Haiti", "Scotland"],
-      D: ["USA", "Paraguay", "Australia", "Türkiye"],
-      E: ["Germany", "Curaçao", "Côte d'Ivoire", "Ecuador"],
-      F: ["Netherlands", "Japan", "Tunisia", "Sweden"],
-      G: ["Belgium", "Egypt", "Iran", "New Zealand"],
-      H: ["Spain", "Cabo Verde", "Saudi Arabia", "Uruguay"],
-      I: ["France", "Senegal", "Norway", "Iraq"],
-      J: ["Argentina", "Algeria", "Austria", "Jordan"],
-      K: ["Portugal", "Uzbekistan", "Colombia", "Congo DR"],
-      L: ["England", "Croatia", "Ghana", "Panama"]
-    };
-
-    const schedule = [
-      { day: 1, matches: [[0, 1], [2, 3]] },
-      { day: 2, matches: [[0, 2], [3, 1]] },
-      { day: 3, matches: [[0, 3], [1, 2]] }
-    ];
-
-    matchesData = [];
-    let matchId = 1;
-
-    for (const [groupName, teams] of Object.entries(groups)) {
-      schedule.forEach(md => {
-        md.matches.forEach(idx => {
-          const team1 = teams[idx[0]];
-          const team2 = teams[idx[1]];
-          matchesData.push({
-            id: matchId++,
-            group: groupName,
-            matchday: md.day,
-            team1,
-            team2,
-            broadcast: localStorage.getItem(`broadcast_${team1}_vs_${team2}`) || ''
-          });
-        });
-      });
-    }
+    renderMatches();
+    updateStats();
   }
 
   function renderMatches() {
@@ -498,7 +476,7 @@
           <textarea 
             class="broadcast-input" 
             data-match-id="${match.id}"
-            placeholder="E.g., BBC HD, Sky Sports 4K, ESPN+, etc."
+            placeholder="E.g., BBC HD, Sky Sports 4K, ESPN+, Telemundo, etc."
             onchange="updateMatch(this)"
           >${match.broadcast}</textarea>
         </div>
@@ -544,16 +522,23 @@
     document.getElementById('empty-broadcasts').textContent = empty;
   }
 
+  function showSuccessMessage(msg) {
+    const el = document.getElementById('success-msg');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
   function saveToLocalStorage() {
     matchesData.forEach(match => {
-      localStorage.setItem(`broadcast_${match.team1}_vs_${match.team2}`, match.broadcast);
+      localStorage.setItem(`broadcast_${match.team1}_${match.team2}`, match.broadcast);
     });
-    alert('✅ All edits saved to browser storage!');
+    showSuccessMessage('✅ All edits saved to browser storage!');
   }
 
   function loadFromLocalStorage() {
     matchesData.forEach(match => {
-      const saved = localStorage.getItem(`broadcast_${match.team1}_vs_${match.team2}`);
+      const saved = localStorage.getItem(`broadcast_${match.team1}_${match.team2}`);
       if (saved) {
         match.broadcast = saved;
       }
@@ -561,44 +546,589 @@
   }
 
   function generateUpdatedHTML() {
-    // Create a modified version of the base HTML with updated broadcast info
-    let updated = baseHTML;
+    const baseIndex = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FANZONE World Cup UHDTV Guide</title>
+<style>
+  /* Custom Font Imports */
+  @font-face {
+    font-family: 'MrBanks-Regular';
+    src: url('MrBanks-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
 
-    matchesData.forEach(match => {
-      if (match.broadcast) {
-        // Replace the tvInfo variable or inject into each match
-        const oldBroadcast = `📺 UHDTV Live on: idk`;
-        const newBroadcast = `📺 UHDTV Live on: ${match.broadcast}`;
-        // This is a simplified approach - in production, you'd want more sophisticated parsing
-      }
-    });
+  @font-face {
+    font-family: 'MrBanks-Text';
+    src: url('MrBanks-Text.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
 
-    // Better approach: Create a new data structure in the HTML
-    const jsDataInjection = `
-    // Broadcast Data - Edit broadcast information for each match
-    const broadcastData = {
-      ${matchesData.map(m => `"${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\n      ')}
+  @font-face {
+    font-family: 'Rifton Norm';
+    src: url('Rifton Norm.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  /* Image-Inspired Color Palette */
+  :root {
+    --bg-main: #182536;       
+    --bg-card: #24354b;       
+    --bg-hover: #314864;      
+    --accent: #5e84a8;        
+    --accent-glow: rgba(94, 132, 168, 0.3);
+    --text-main: #e2e8f0;     
+    --text-muted: #94a8bc;    
+    --text-accent: #92bce6;   
+  }
+
+  body { 
+    font-family: 'MrBanks-Text', sans-serif; 
+    font-weight: normal;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    max-width: 750px; 
+    margin: 40px auto; 
+    padding: 0 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h2 { 
+    text-align: center; 
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-weight: normal;
+  }
+  
+  .brand-fanzone {
+    font-family: 'Rifton Norm', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 2px;
+    color: var(--text-main);
+    text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    font-weight: normal;
+  }
+
+  .brand-sub {
+    font-family: 'MrBanks-Regular', sans-serif;
+    font-size: 1.5rem;
+    color: var(--text-accent);
+    letter-spacing: 1px;
+    font-weight: normal;
+  }
+
+  /* Compact Countdown Section Styles */
+  .countdown-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .countdown-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px 2px 8px 2px; 
+    padding: 8px 12px;
+    min-width: 65px;
+    text-align: center;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    animation: ambientGlow 4s infinite ease-in-out;
+  }
+
+  .countdown-num {
+    font-family: 'MrBanks-Regular', sans-serif;
+    font-size: 1.6rem; 
+    color: var(--text-main);
+    display: block;
+    line-height: 1.1;
+    font-weight: normal;
+  }
+
+  .tick {
+    animation: numTick 0.3s ease-out;
+  }
+
+  .countdown-label {
+    font-family: 'MrBanks-Text', sans-serif;
+    font-size: 0.65rem; 
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: normal;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* Custom Dynamic Link Button Component */
+  .action-btn-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+
+  .goals-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px 2px 12px 2px;
+    text-decoration: none;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .goals-button:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px -5px var(--accent-glow);
+  }
+
+  .goals-button-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    height: 100%;
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/8/88/2026_FIFA_World_Cup_emblem_%28horizontal%2C_with_wordmark%29.svg');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: invert(85%) sepia(10%) saturate(1200%) hue-rotate(185deg) opacity(0.08);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .goals-button-text {
+    position: relative;
+    z-index: 2;
+    font-family: 'MrBanks-Regular', sans-serif;
+    font-size: 1.25rem;
+    color: var(--text-accent);
+    letter-spacing: 1.5px;
+    font-weight: normal;
+    text-align: center;
+  }
+
+  /* Smooth Slide Animation Wrappers */
+  .anim-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .anim-wrapper.open {
+    grid-template-rows: 1fr;
+  }
+  
+  .anim-content {
+    overflow: hidden;
+  }
+
+  .group { 
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 14px; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .group:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px -5px var(--accent-glow);
+  }
+
+  .group-header { 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px; 
+    cursor: pointer; 
+    user-select: none;
+  }
+  
+  .group-title {
+    font-family: 'MrBanks-Regular', sans-serif;
+    font-size: 1.3rem;
+    margin: 0;
+    font-weight: normal;
+  }
+  
+  .chevron {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: var(--text-muted);
+    stroke-width: 2;
+    transition: transform 0.3s;
+  }
+  .open-header .chevron {
+    transform: rotate(180deg);
+    stroke: var(--text-accent);
+  }
+
+  .matchdays-list { padding: 0 22px 18px 22px; }
+
+  .matchday-header { 
+    cursor: pointer; 
+    color: var(--text-muted); 
+    margin: 8px 0; 
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: normal;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .matchday-header:hover { 
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+  }
+  .matchday-header.active {
+    background: rgba(94, 132, 168, 0.2);
+    color: var(--text-accent);
+  }
+
+  .matches-list { 
+    padding: 6px 4px 12px 4px; 
+  }
+
+  .match { 
+    cursor: pointer; 
+    margin: 10px 0; 
+    padding: 14px; 
+    background: rgba(0, 0, 0, 0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    font-weight: normal;
+    transition: background 0.2s, border-color 0.2s;
+    animation: fadeInSlide 0.3s ease forwards;
+  }
+  .match:hover { 
+    background: var(--bg-hover);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .match-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .team-slot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px 2px 12px 2px;
+    overflow: hidden;
+    flex: 1;
+    height: 24px;
+  }
+
+  .team-flag {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.15;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .team-name {
+    position: relative;
+    z-index: 2;
+    font-family: 'MrBanks-Text', sans-serif;
+    font-weight: normal;
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .vs-label {
+    color: var(--text-accent);
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    font-weight: normal;
+    user-select: none;
+  }
+
+  /* Broadcasters Panel */
+  .broadcasters { 
+    color: #a3c4e8; 
+    font-size: 0.95rem; 
+    font-weight: normal;
+    background: rgba(0, 0, 0, 0.2);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    margin-top: 10px;
+  }
+
+  .broadcasters-inner {
+    padding: 10px 14px;
+  }
+
+  /* Core Keyframe Animations */
+  @keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes ambientGlow {
+    0%, 100% { box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2); border-color: rgba(255, 255, 255, 0.05); }
+    50% { box-shadow: 0 6px 18px -4px var(--accent-glow); border-color: var(--accent); }
+  }
+
+  @keyframes numTick {
+    0% { transform: translateY(-5px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<h2>
+  <span class="brand-fanzone">FANZONE</span>
+  <span class="brand-sub">World Cup UHDTV Guide</span>
+</h2>
+
+<div class="countdown-container">
+  <div class="countdown-card">
+    <span id="cd-days" class="countdown-num">00</span>
+    <span class="countdown-label">Days</span>
+  </div>
+  <div class="countdown-card">
+    <span id="cd-hours" class="countdown-num">00</span>
+    <span class="countdown-label">Hours</span>
+  </div>
+  <div class="countdown-card">
+    <span id="cd-minutes" class="countdown-num">00</span>
+    <span class="countdown-label">Mins</span>
+  </div>
+  <div class="countdown-card">
+    <span id="cd-seconds" class="countdown-num">00</span>
+    <span class="countdown-label">Secs</span>
+  </div>
+</div>
+
+<div class="action-btn-container">
+  <a href="tg://resolve?domain=elitelivegoals" class="goals-button">
+    <div class="goals-button-bg"></div>
+    <span class="goals-button-text">UHD Live Goals</span>
+  </a>
+</div>
+
+<div id="worldcup-container"></div>
+
+<script>
+  // Broadcast Data - Edit these values to update match broadcasts
+  const broadcastData = {
+${matchesData.map(m => `    "${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\n')}
+  };
+
+  // Function to get broadcast info for a match
+  function getBroadcast(team1, team2) {
+    return broadcastData[team1 + "|" + team2] || broadcastData[team2 + "|" + team1] || "TBA";
+  }
+
+  // Setup countdown mechanics targeting the opening match date
+  const targetDate = new Date('June 11, 2026 20:00:00 GMT-0500').getTime();
+
+  function updateCountdown() {
+    const now = new Date().getTime();
+    const distance = targetDate - now;
+
+    if (distance < 0) {
+      document.querySelector(".countdown-container").style.display = "none";
+      return;
+    }
+
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    applyDigitUpdate('cd-days', days.toString().padStart(2, '0'));
+    applyDigitUpdate('cd-hours', hours.toString().padStart(2, '0'));
+    applyDigitUpdate('cd-minutes', minutes.toString().padStart(2, '0'));
+    applyDigitUpdate('cd-seconds', seconds.toString().padStart(2, '0'));
+  }
+
+  function applyDigitUpdate(id, newValue) {
+    const element = document.getElementById(id);
+    if (element.innerText !== newValue) {
+      element.innerText = newValue;
+      element.classList.remove('tick');
+      void element.offsetWidth; 
+      element.classList.add('tick');
+    }
+  }
+
+  setInterval(updateCountdown, 1000);
+  updateCountdown();
+
+  // Core App Data Setup Engine
+  const groups = {
+    A: ["Mexico", "South Africa", "South Korea", "Czechia"],
+    B: ["Canada", "Switzerland", "Qatar", "Bosnia and Herzegovina"],
+    C: ["Brazil", "Morocco", "Haiti", "Scotland"],
+    D: ["USA", "Paraguay", "Australia", "Türkiye"],
+    E: ["Germany", "Curaçao", "Côte d'Ivoire", "Ecuador"],
+    F: ["Netherlands", "Japan", "Tunisia", "Sweden"],
+    G: ["Belgium", "Egypt", "Iran", "New Zealand"],
+    H: ["Spain", "Cabo Verde", "Saudi Arabia", "Uruguay"],
+    I: ["France", "Senegal", "Norway", "Iraq"],
+    J: ["Argentina", "Algeria", "Austria", "Jordan"],
+    K: ["Portugal", "Uzbekistan", "Colombia", "Congo DR"],
+    L: ["England", "Croatia", "Ghana", "Panama"]
+  };
+
+  const flagCodes = {
+    "Mexico": "mx", "South Africa": "za", "South Korea": "kr", "Czechia": "cz",
+    "Canada": "ca", "Switzerland": "ch", "Qatar": "qa", "Bosnia and Herzegovina": "ba",
+    "Brazil": "br", "Morocco": "ma", "Haiti": "ht", "Scotland": "sc",
+    "USA": "us", "Paraguay": "py", "Australia": "au", "Türkiye": "tr",
+    "Germany": "de", "Curaçao": "cw", "Côte d'Ivoire": "ci", "Ecuador": "ec",
+    "Netherlands": "nl", "Japan": "jp", "Tunisia": "tn", "Sweden": "se",
+    "Belgium": "be", "Egypt": "eg", "Iran": "ir", "New Zealand": "nz",
+    "Spain": "es", "Cabo Verde": "cv", "Saudi Arabia": "sa", "Uruguay": "uy",
+    "France": "fr", "Senegal": "sn", "Norway": "no", "Iraq": "iq",
+    "Argentina": "ar", "Algeria": "dz", "Austria": "at", "Jordan": "jo",
+    "Portugal": "pt", "Uzbekistan": "uz", "Colombia": "co", "Congo DR": "cd",
+    "England": "gb-eng", "Croatia": "hr", "Ghana": "gh", "Panama": "pa"
+  };
+
+  function getFlagUrl(teamName) {
+    if (teamName === "Iran") {
+      return "https://flagofiran.com/files/Flag_of_Iran_detailed.svg";
+    }
+    const code = flagCodes[teamName] || "un";
+    return \`https://cdn.jsdelivr.net/npm/@lipis/flag-icons@6.14.0/flags/4x3/\${code}.svg\`;
+  }
+
+  const container = document.getElementById('worldcup-container');
+  const chevronSvg = \`<svg class="chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>\`;
+
+  for (const [groupName, teams] of Object.entries(groups)) {
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'group';
+
+    const header = document.createElement('div');
+    header.className = 'group-header';
+    header.innerHTML = \`<span class="group-title">Group \${groupName} <span style="font-family:'MrBanks-Text', sans-serif; color:var(--text-muted); font-size:1rem; margin-left:8px; font-weight:normal">(\${teams.join(', ')})</span></span>\` + chevronSvg;
+    
+    const mdWrapper = document.createElement('div');
+    mdWrapper.className = 'anim-wrapper';
+    
+    const mdContent = document.createElement('div');
+    mdContent.className = 'anim-content matchdays-list';
+
+    header.onclick = () => {
+      header.classList.toggle('open-header');
+      mdWrapper.classList.toggle('open');
     };
 
-    // Function to get broadcast info for a match
-    function getBroadcast(team1, team2) {
-      return broadcastData[team1 + "|" + team2] || broadcastData[team2 + "|" + team1] || "idk";
-    }
-    `;
+    const schedule = [
+      { day: 1, matches: [[0, 1], [2, 3]] },
+      { day: 2, matches: [[0, 2], [3, 1]] },
+      { day: 3, matches: [[0, 3], [1, 2]] }
+    ];
 
-    // Replace the tvInfo assignment with the new broadcast function call
-    updated = updated.replace(
-      'const tvInfo = "idk";',
-      jsDataInjection
-    );
+    schedule.forEach(md => {
+      const mdHeader = document.createElement('div');
+      mdHeader.className = 'matchday-header';
+      mdHeader.innerHTML = \`<span>Matchday \${md.day}</span> \${chevronSvg}\`;
 
-    // Update the broadcast display line
-    updated = updated.replace(
-      'bcContent.innerHTML = `📺 UHDTV Live on: ${tvInfo}`;',
-      'bcContent.innerHTML = `📺 UHDTV Live on: ${getBroadcast(team1, team2)}`;'
-    );
+      const matchWrapper = document.createElement('div');
+      matchWrapper.className = 'anim-wrapper';
 
-    return updated;
+      const matchContent = document.createElement('div');
+      matchContent.className = 'anim-content matches-list';
+
+      mdHeader.onclick = () => {
+        mdHeader.classList.toggle('active');
+        matchWrapper.classList.toggle('open');
+      };
+
+      md.matches.forEach(idx => {
+        const team1 = teams[idx[0]];
+        const team2 = teams[idx[1]];
+        const url1 = getFlagUrl(team1);
+        const url2 = getFlagUrl(team2);
+
+        const matchDiv = document.createElement('div');
+        matchDiv.className = 'match';
+        matchDiv.innerHTML = \`
+          <div class="match-row">
+            <div class="team-slot">
+              <div class="team-flag" style="background-image: url('\${url1}');"></div>
+              <span class="team-name">\${team1}</span>
+            </div>
+            <div class="vs-label">VS</div>
+            <div class="team-slot">
+              <div class="team-flag" style="background-image: url('\${url2}');"></div>
+              <span class="team-name">\${team2}</span>
+            </div>
+          </div>
+        \`;
+
+        const bcWrapper = document.createElement('div');
+        bcWrapper.className = 'anim-wrapper broadcasters';
+        
+        const bcContent = document.createElement('div');
+        bcContent.className = 'anim-content broadcasters-inner';
+        bcContent.innerHTML = \`📺 UHDTV Live on: \${getBroadcast(team1, team2)}\`;
+
+        bcWrapper.appendChild(bcContent);
+        matchDiv.appendChild(bcWrapper);
+
+        matchDiv.onclick = (e) => {
+          e.stopPropagation();
+          bcWrapper.classList.toggle('open');
+        };
+
+        matchContent.appendChild(matchDiv);
+      });
+
+      matchWrapper.appendChild(matchContent);
+      mdContent.appendChild(mdHeader);
+      mdContent.appendChild(matchWrapper);
+    });
+
+    mdWrapper.appendChild(mdContent);
+    groupDiv.appendChild(header);
+    groupDiv.appendChild(mdWrapper);
+    container.appendChild(groupDiv);
+  }
+</script>
+</body>
+</html>`;
+
+    return baseIndex;
   }
 
   function exportHTML() {
@@ -614,12 +1144,14 @@
   function copyToClipboard() {
     const code = document.getElementById('export-code-content').textContent;
     navigator.clipboard.writeText(code).then(() => {
-      alert('✅ HTML code copied to clipboard!');
+      showSuccessMessage('✅ HTML code copied to clipboard!');
+    }).catch(() => {
+      alert('Failed to copy. Try selecting and copying manually.');
     });
   }
 
-  // Initialize
-  loadHTML();
+  // Initialize on page load
+  window.addEventListener('DOMContentLoaded', initializeMatches);
 </script>
 
 </body>
