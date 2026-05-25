@@ -471,7 +471,7 @@
       return "https://flagofiran.com/files/Flag_of_Iran_detailed.svg";
     }
     const code = flagCodes[teamName] || "un";
-    return `4x3/${code}.svg`;
+    return `https://cdn.jsdelivr.net/npm/@lipis/flag-icons@6.14.0/flags/4x3/${code}.svg`;
   }
 
   const tvInfo = "idk";
@@ -484,7 +484,7 @@
 
     const header = document.createElement('div');
     header.className = 'group-header';
-    header.innerHTML = `<span class="group-title">Group ${groupName} <span style="font-family:'MrBanks-Text', sans-serif; color:var(--text-muted); font-size:1rem; margin-left:8px; font-weight:normal;">${teams.join(' · ')}</span></span> ${chevronSvg}`;
+    header.innerHTML = `<span class="group-title">Group ${groupName} <span style="font-family:'MrBanks-Text', sans-serif; color:var(--text-muted); font-size:1rem; margin-left:8px; font-weight:normal;">${teams.length} Teams</span></span> ${chevronSvg}`;
     
     const mdWrapper = document.createElement('div');
     mdWrapper.className = 'anim-wrapper';
