@@ -474,7 +474,89 @@
     return `https://cdn.jsdelivr.net/npm/@lipis/flag-icons@6.14.0/flags/4x3/${code}.svg`;
   }
 
-  const tvInfo = "idk";
+  
+    // Broadcast Data - Edit broadcast information for each match
+    const broadcastData = {
+      "Mexico|South Africa": "Magenta TV UHD
+RAI4K",
+      "South Korea|Czechia": "",
+      "Mexico|South Korea": "",
+      "Czechia|South Africa": "",
+      "Mexico|Czechia": "",
+      "South Africa|South Korea": "",
+      "Canada|Switzerland": "",
+      "Qatar|Bosnia and Herzegovina": "",
+      "Canada|Qatar": "",
+      "Bosnia and Herzegovina|Switzerland": "",
+      "Canada|Bosnia and Herzegovina": "",
+      "Switzerland|Qatar": "",
+      "Brazil|Morocco": "",
+      "Haiti|Scotland": "",
+      "Brazil|Haiti": "",
+      "Scotland|Morocco": "",
+      "Brazil|Scotland": "",
+      "Morocco|Haiti": "",
+      "USA|Paraguay": "",
+      "Australia|Türkiye": "",
+      "USA|Australia": "",
+      "Türkiye|Paraguay": "",
+      "USA|Türkiye": "",
+      "Paraguay|Australia": "",
+      "Germany|Curaçao": "",
+      "Côte d'Ivoire|Ecuador": "",
+      "Germany|Côte d'Ivoire": "",
+      "Ecuador|Curaçao": "",
+      "Germany|Ecuador": "",
+      "Curaçao|Côte d'Ivoire": "",
+      "Netherlands|Japan": "",
+      "Tunisia|Sweden": "",
+      "Netherlands|Tunisia": "",
+      "Sweden|Japan": "",
+      "Netherlands|Sweden": "",
+      "Japan|Tunisia": "",
+      "Belgium|Egypt": "",
+      "Iran|New Zealand": "",
+      "Belgium|Iran": "",
+      "New Zealand|Egypt": "",
+      "Belgium|New Zealand": "",
+      "Egypt|Iran": "",
+      "Spain|Cabo Verde": "",
+      "Saudi Arabia|Uruguay": "",
+      "Spain|Saudi Arabia": "",
+      "Uruguay|Cabo Verde": "",
+      "Spain|Uruguay": "",
+      "Cabo Verde|Saudi Arabia": "",
+      "France|Senegal": "",
+      "Norway|Iraq": "",
+      "France|Norway": "",
+      "Iraq|Senegal": "",
+      "France|Iraq": "",
+      "Senegal|Norway": "",
+      "Argentina|Algeria": "",
+      "Austria|Jordan": "",
+      "Argentina|Austria": "",
+      "Jordan|Algeria": "",
+      "Argentina|Jordan": "",
+      "Algeria|Austria": "",
+      "Portugal|Uzbekistan": "",
+      "Colombia|Congo DR": "",
+      "Portugal|Colombia": "",
+      "Congo DR|Uzbekistan": "",
+      "Portugal|Congo DR": "",
+      "Uzbekistan|Colombia": "",
+      "England|Croatia": "",
+      "Ghana|Panama": "",
+      "England|Ghana": "",
+      "Panama|Croatia": "",
+      "England|Panama": "",
+      "Croatia|Ghana": ""
+    };
+
+    // Function to get broadcast info for a match
+    function getBroadcast(team1, team2) {
+      return broadcastData[team1 + "|" + team2] || broadcastData[team2 + "|" + team1] || "idk";
+    }
+    
   const container = document.getElementById('worldcup-container');
   const chevronSvg = `<svg class="chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>`;
 
@@ -546,7 +628,7 @@
         
         const bcContent = document.createElement('div');
         bcContent.className = 'anim-content broadcasters-inner';
-        bcContent.innerHTML = `📺 UHDTV Live on: ${tvInfo}`;
+        bcContent.innerHTML = `📺 UHDTV Live on: ${getBroadcast(team1, team2)}`;
 
         bcWrapper.appendChild(bcContent);
         matchDiv.appendChild(bcWrapper);
