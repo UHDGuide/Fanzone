@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FANZONE Editor - Broadcast Management</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-main: #182536;
+    --bg-card: #24354b;
+    --bg-hover: #314864;
+    --accent: #5e84a8;
+    --accent-glow: rgba(94, 132, 168, 0.3);
+    --text-main: #e2e8f0;
+    --text-muted: #94a8bc;
+    --text-accent: #92bce6;
+    --success: #4ade80;
+    --warning: #fbbf24;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .header h1 {
+    font-size: 2rem;
+    color: var(--text-accent);
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  button {
+    padding: 10px 20px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+
+  button:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  button.save-btn {
+    background: var(--success);
+    color: var(--bg-main);
+    border-color: var(--success);
+    font-weight: bold;
+  }
+
+  button.save-btn:hover {
+    background: #22c55e;
+  }
+
+  button.export-btn {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  button.export-btn:hover {
+    background: #7fa8c4;
+  }
+
+  .search-box {
+    margin-bottom: 20px;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-size: 1rem;
+  }
+
+  .search-box input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .matches-grid {
+    display: grid;
+    gap: 15px;
+  }
+
+  .match-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 20px;
+    transition: all 0.2s;
+  }
+
+  .match-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  .match-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .match-teams {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-main);
+  }
+
+  .match-group {
+    display: inline-block;
+    background: var(--bg-hover);
+    color: var(--text-accent);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    margin-left: auto;
+  }
+
+  .match-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+  }
+
+  .broadcast-section {
+    margin-top: 15px;
+  }
+
+  .broadcast-label {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--text-accent);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .broadcast-input {
+    width: 100%;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-family: 'Courier New', monospace;
+  }
+
+  .broadcast-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+
+  .status-empty {
+    background: var(--warning);
+  }
+
+  .status-filled {
+    background: var(--success);
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal.active {
+    display: flex;
+  }
+
+  .modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    max-width: 800px;
+  }
+
+  .modal-header {
+    font-size: 1.5rem;
+    color: var(--text-accent);
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+  }
+
+  .modal-close:hover {
+    color: var(--text-main);
+  }
+
+  .export-code {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--text-accent);
+    max-height: 500px;
+    overflow-y: auto;
+    margin: 15px 0;
+    line-height: 1.4;
+  }
+
+  .copy-btn {
+    background: var(--accent);
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    margin-top: 10px;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 15px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--text-accent);
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+  }
+
+  .no-matches {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🎬 FANZONE Broadcast Editor</h1>
+    <div class="header-actions">
+      <button class="export-btn" onclick="exportHTML()">📥 Export Updated HTML</button>
+      <button class="save-btn" onclick="saveToLocalStorage()">💾 Save Edits</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-value" id="total-matches">0</div>
+      <div class="stat-label">Total Matches</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="filled-broadcasts">0</div>
+      <div class="stat-label">Broadcasts Filled</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="empty-broadcasts">0</div>
+      <div class="stat-label">Empty Broadcasts</div>
+    </div>
+  </div>
+
+  <div class="search-box">
+    <input type="text" id="search-input" placeholder="🔍 Search matches (e.g., Brazil, Group A, Mexico vs South Korea)..." onkeyup="filterMatches()">
+  </div>
+
+  <div class="matches-grid" id="matches-container"></div>
+  <div id="no-matches-msg" class="no-matches" style="display:none;">No matches found. Try adjusting your search.</div>
+</div>
+
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span>Export Updated HTML</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <p style="color: var(--text-muted); margin-bottom: 15px;">Copy the code below and replace the entire contents of your <strong>index.html</strong> file:</p>
+    <div class="export-code" id="export-code-content"></div>
+    <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+  </div>
+</div>
+
+<script>
+  let matchesData = [];
+  let baseHTML = '';
+
+  // Fetch and parse the current index.html
+  async function loadHTML() {
+    try {
+      const response = await fetch('index.html');
+      baseHTML = await response.text();
+      parseMatches();
+      renderMatches();
+      updateStats();
+    } catch (error) {
+      console.error('Error loading HTML:', error);
+      // Fallback: Create demo data if fetch fails
+      createDemoData();
+    }
+  }
+
+  function createDemoData() {
+    const groups = {
+      A: ["Mexico", "South Africa", "South Korea", "Czechia"],
+      B: ["Canada", "Switzerland", "Qatar", "Bosnia and Herzegovina"],
+      C: ["Brazil", "Morocco", "Haiti", "Scotland"],
+      D: ["USA", "Paraguay", "Australia", "Türkiye"],
+      E: ["Germany", "Curaçao", "Côte d'Ivoire", "Ecuador"],
+      F: ["Netherlands", "Japan", "Tunisia", "Sweden"],
+      G: ["Belgium", "Egypt", "Iran", "New Zealand"],
+      H: ["Spain", "Cabo Verde", "Saudi Arabia", "Uruguay"],
+      I: ["France", "Senegal", "Norway", "Iraq"],
+      J: ["Argentina", "Algeria", "Austria", "Jordan"],
+      K: ["Portugal", "Uzbekistan", "Colombia", "Congo DR"],
+      L: ["England", "Croatia", "Ghana", "Panama"]
+    };
+
+    const schedule = [
+      { day: 1, matches: [[0, 1], [2, 3]] },
+      { day: 2, matches: [[0, 2], [3, 1]] },
+      { day: 3, matches: [[0, 3], [1, 2]] }
+    ];
+
+    matchesData = [];
+    let matchId = 1;
+
+    for (const [groupName, teams] of Object.entries(groups)) {
+      schedule.forEach(md => {
+        md.matches.forEach(idx => {
+          const team1 = teams[idx[0]];
+          const team2 = teams[idx[1]];
+          matchesData.push({
+            id: matchId++,
+            group: groupName,
+            matchday: md.day,
+            team1,
+            team2,
+            broadcast: localStorage.getItem(`broadcast_${team1}_vs_${team2}`) || ''
+          });
+        });
+      });
+    }
+
+    loadFromLocalStorage();
+  }
+
+  function parseMatches() {
+    const groups = {
+      A: ["Mexico", "South Africa", "South Korea", "Czechia"],
+      B: ["Canada", "Switzerland", "Qatar", "Bosnia and Herzegovina"],
+      C: ["Brazil", "Morocco", "Haiti", "Scotland"],
+      D: ["USA", "Paraguay", "Australia", "Türkiye"],
+      E: ["Germany", "Curaçao", "Côte d'Ivoire", "Ecuador"],
+      F: ["Netherlands", "Japan", "Tunisia", "Sweden"],
+      G: ["Belgium", "Egypt", "Iran", "New Zealand"],
+      H: ["Spain", "Cabo Verde", "Saudi Arabia", "Uruguay"],
+      I: ["France", "Senegal", "Norway", "Iraq"],
+      J: ["Argentina", "Algeria", "Austria", "Jordan"],
+      K: ["Portugal", "Uzbekistan", "Colombia", "Congo DR"],
+      L: ["England", "Croatia", "Ghana", "Panama"]
+    };
+
+    const schedule = [
+      { day: 1, matches: [[0, 1], [2, 3]] },
+      { day: 2, matches: [[0, 2], [3, 1]] },
+      { day: 3, matches: [[0, 3], [1, 2]] }
+    ];
+
+    matchesData = [];
+    let matchId = 1;
+
+    for (const [groupName, teams] of Object.entries(groups)) {
+      schedule.forEach(md => {
+        md.matches.forEach(idx => {
+          const team1 = teams[idx[0]];
+          const team2 = teams[idx[1]];
+          matchesData.push({
+            id: matchId++,
+            group: groupName,
+            matchday: md.day,
+            team1,
+            team2,
+            broadcast: localStorage.getItem(`broadcast_${team1}_vs_${team2}`) || ''
+          });
+        });
+      });
+    }
+  }
+
+  function renderMatches() {
+    const container = document.getElementById('matches-container');
+    container.innerHTML = '';
+
+    if (matchesData.length === 0) {
+      document.getElementById('no-matches-msg').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('no-matches-msg').style.display = 'none';
+
+    matchesData.forEach(match => {
+      const card = document.createElement('div');
+      card.className = 'match-card';
+      card.dataset.matchId = match.id;
+
+      const statusIcon = match.broadcast ? '✅' : '⚠️';
+      const statusClass = match.broadcast ? 'status-filled' : 'status-empty';
+
+      card.innerHTML = `
+        <div class="match-title">
+          <span class="match-teams">${match.team1} <strong>vs</strong> ${match.team2}</span>
+          <span class="match-group">Group ${match.group} - Matchday ${match.matchday}</span>
+        </div>
+        <div class="match-meta">
+          <span class="status-indicator ${statusClass}"></span>
+          <span>${statusIcon} ${match.broadcast ? 'Broadcast Configured' : 'No Broadcast Set'}</span>
+        </div>
+        <div class="broadcast-section">
+          <label class="broadcast-label">📺 UHDTV Broadcast Information:</label>
+          <textarea 
+            class="broadcast-input" 
+            data-match-id="${match.id}"
+            placeholder="E.g., BBC HD, Sky Sports 4K, ESPN+, etc."
+            onchange="updateMatch(this)"
+          >${match.broadcast}</textarea>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+  }
+
+  function updateMatch(input) {
+    const matchId = input.dataset.matchId;
+    const match = matchesData.find(m => m.id == matchId);
+    if (match) {
+      match.broadcast = input.value;
+    }
+    updateStats();
+  }
+
+  function filterMatches() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const cards = document.querySelectorAll('.match-card');
+
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      if (text.includes(searchTerm)) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    const visibleCards = document.querySelectorAll('.match-card:not([style*="display: none"])');
+    document.getElementById('no-matches-msg').style.display = visibleCards.length === 0 ? 'block' : 'none';
+  }
+
+  function updateStats() {
+    const total = matchesData.length;
+    const filled = matchesData.filter(m => m.broadcast.trim()).length;
+    const empty = total - filled;
+
+    document.getElementById('total-matches').textContent = total;
+    document.getElementById('filled-broadcasts').textContent = filled;
+    document.getElementById('empty-broadcasts').textContent = empty;
+  }
+
+  function saveToLocalStorage() {
+    matchesData.forEach(match => {
+      localStorage.setItem(`broadcast_${match.team1}_vs_${match.team2}`, match.broadcast);
+    });
+    alert('✅ All edits saved to browser storage!');
+  }
+
+  function loadFromLocalStorage() {
+    matchesData.forEach(match => {
+      const saved = localStorage.getItem(`broadcast_${match.team1}_vs_${match.team2}`);
+      if (saved) {
+        match.broadcast = saved;
+      }
+    });
+  }
+
+  function generateUpdatedHTML() {
+    // Create a modified version of the base HTML with updated broadcast info
+    let updated = baseHTML;
+
+    matchesData.forEach(match => {
+      if (match.broadcast) {
+        // Replace the tvInfo variable or inject into each match
+        const oldBroadcast = `📺 UHDTV Live on: idk`;
+        const newBroadcast = `📺 UHDTV Live on: ${match.broadcast}`;
+        // This is a simplified approach - in production, you'd want more sophisticated parsing
+      }
+    });
+
+    // Better approach: Create a new data structure in the HTML
+    const jsDataInjection = `
+    // Broadcast Data - Edit broadcast information for each match
+    const broadcastData = {
+      ${matchesData.map(m => `"${m.team1}|${m.team2}": "${m.broadcast}"`).join(',\n      ')}
+    };
+
+    // Function to get broadcast info for a match
+    function getBroadcast(team1, team2) {
+      return broadcastData[team1 + "|" + team2] || broadcastData[team2 + "|" + team1] || "idk";
+    }
+    `;
+
+    // Replace the tvInfo assignment with the new broadcast function call
+    updated = updated.replace(
+      'const tvInfo = "idk";',
+      jsDataInjection
+    );
+
+    // Update the broadcast display line
+    updated = updated.replace(
+      'bcContent.innerHTML = `📺 UHDTV Live on: ${tvInfo}`;',
+      'bcContent.innerHTML = `📺 UHDTV Live on: ${getBroadcast(team1, team2)}`;'
+    );
+
+    return updated;
+  }
+
+  function exportHTML() {
+    const updatedHTML = generateUpdatedHTML();
+    document.getElementById('export-code-content').textContent = updatedHTML;
+    document.getElementById('modal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+  }
+
+  function copyToClipboard() {
+    const code = document.getElementById('export-code-content').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      alert('✅ HTML code copied to clipboard!');
+    });
+  }
+
+  // Initialize
+  loadHTML();
+</script>
+
+</body>
+</html>
